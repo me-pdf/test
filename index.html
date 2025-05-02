@@ -2,9 +2,82 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Saluto</title>
+  <title>Flipbook PDF dinamico</title>
+  <style>
+    body {
+      background: #ccc;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    #flipbook {
+      width: 800px;
+      height: 600px;
+    }
+    #flipbook .page {
+      width: 400px;
+      height: 600px;
+      background: white;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
 </head>
 <body>
-  <h1>Ciao Piera</h1>
+
+<div id="flipbook"></div>
+
+<!-- LIBRERIE -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://www.turnjs.com/lib/turn.min.js"></script>
+
+<script>
+  const url = 'https://raw.githubusercontent.com/me-pdf/test/5e456387f3e86cf3cdbad3c212821b37e8e9e453/L31_2024_2_v1.pdf'; // <-- tuo PDF
+
+  const flipbook = document.getElementById('flipbook');
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  pdfjsLib.getDocument(url).promise.then(pdf => {
+    const totalPages = pdf.numPages;
+    const renderPage = (pageNum) => {
+      return pdf.getPage(pageNum).then(page => {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        const viewport = page.getViewport({ scale: 1.5 });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        return page.render({ canvasContext: context, viewport: viewport }).promise.then(() => {
+          const pageDiv = document.createElement('div');
+          pageDiv.classList.add('page');
+          pageDiv.appendChild(canvas);
+          flipbook.appendChild(pageDiv);
+        });
+      });
+    };
+
+    const renderAllPages = async () => {
+      for (let i = 1; i <= totalPages; i++) {
+        await renderPage(i);
+      }
+
+      $('#flipbook').turn({
+        width: 800,
+        height: 600,
+        autoCenter: true
+      });
+    };
+
+    renderAllPages();
+  });
+</script>
+
 </body>
 </html>
